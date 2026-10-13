@@ -27,3 +27,7 @@ The original /home/zfzf/final_final is retained unchanged. tests/source_manifest
 ## 2080 Ti copy
 
 This copy is located at /home/zzf/myeye/CAMS-MBRCNet and uses /home/zzf/miniconda3/envs/octa_repro/bin/python. The historical source-equivalence tests reference A40 paths and remain as archived validation records. No training has been started by the transfer.
+
+## Comparison framework
+
+`comparison_models/` contains the independent lazy registry, adapter contract, and future seed-run path rules for external paper baselines. No external model is registered yet. See `comparison_models/README.md` and `configs/comparison/README.md`. The existing proposed-model training entry points and historical logs remain unchanged.
