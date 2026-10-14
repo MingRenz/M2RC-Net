@@ -6,7 +6,7 @@ from .mbrc_v2 import MBRCV2, ResidualBlock, cna
 
 
 class MBRCV3(MBRCV2):
-    def __init__(self, f1_channels=32):
+    def __init__(self, f1_channels=32, seed=0):
         # 先按V2.1原顺序创建全部共有模块。
         super().__init__(f1_channels=f1_channels)
         old_first = self.shared[0]
@@ -21,7 +21,7 @@ class MBRCV3(MBRCV2):
 
         # 新模块使用独立CPU随机流，不改变共有模块或后续训练的随机序列。
         with torch.random.fork_rng(devices=[]):
-            torch.default_generator.manual_seed(20260929)
+            torch.default_generator.manual_seed(20260929 + seed)
             self.recovery3 = nn.Sequential(
                 cna(64, 32, 1, 8), ResidualBlock()
             )

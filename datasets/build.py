@@ -13,11 +13,11 @@ COUNTS = {
 }
 
 
-def build_dataset(dataset, root, split, use_cams=False, map_root=None):
+def build_dataset(dataset, root, split, use_cams=False, map_root=None, seed=0):
     root = Path(root).expanduser().resolve(strict=True)
-    original = (OCTA3M(root, split) if dataset == "OCTA500_3M"
-                else OCTAMulti(root, split) if dataset == "OCTA500_6M"
-                else ROSSADataset(root, split))
+    original = (OCTA3M(root, split, seed=seed) if dataset == "OCTA500_3M"
+                else OCTAMulti(root, split, seed=seed) if dataset == "OCTA500_6M"
+                else ROSSADataset(root, split, seed=seed))
     if len(original) != COUNTS[dataset][split]:
         raise RuntimeError("Frozen split count changed")
     if use_cams:
@@ -27,9 +27,9 @@ def build_dataset(dataset, root, split, use_cams=False, map_root=None):
     return original
 
 
-def build_datasets(dataset, root, use_cams=False, map_root=None):
+def build_datasets(dataset, root, use_cams=False, map_root=None, seed=0):
     sets = {
-        split: build_dataset(dataset, root, split, use_cams, map_root)
+        split: build_dataset(dataset, root, split, use_cams, map_root, seed=seed)
         for split in ("train", "val", "test")
     }
     for split in sets:
@@ -52,5 +52,5 @@ def make_loaders(sets, batch_size=2, seed=0):
 
 
 def build_dataloaders(dataset, root, use_cams=False, map_root=None, batch_size=2, seed=0):
-    sets = build_datasets(dataset, root, use_cams, map_root)
+    sets = build_datasets(dataset, root, use_cams, map_root, seed=seed)
     return sets, make_loaders(sets, batch_size, seed)

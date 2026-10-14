@@ -11,7 +11,7 @@ EXPECTED = {"train": 140, "val": 10, "test": 50}
 
 
 class OCTA3M(Dataset):
-    def __init__(self, root, split):
+    def __init__(self, root, split, seed=SEED):
         self.image_dir = root / split / "image"
         self.label_dir = root / split / "label"
         if not self.image_dir.is_dir() or not self.label_dir.is_dir():
@@ -31,7 +31,7 @@ class OCTA3M(Dataset):
             raise RuntimeError(f"{split} 缺少同名标签：{missing[:5]}")
 
         # 原版先 shuffle；排序使相同 seed 下的初始文件顺序固定。
-        random.Random(SEED).shuffle(names)
+        random.Random(seed).shuffle(names)
         self.names = names
 
     def __len__(self):
@@ -82,7 +82,7 @@ EXTENSIONS = {".bmp", ".png", ".jpg", ".jpeg", ".tif", ".tiff"}
 
 
 class OCTAMulti(Dataset):
-    def __init__(self, root, split):
+    def __init__(self, root, split, seed=SEED):
         root = Path(root).expanduser().resolve(strict=True)
         if root.name not in LAYOUTS:
             raise ValueError(f"Dataset root must be OCTA500_6M or ROSSA: {root}")
@@ -113,7 +113,7 @@ class OCTAMulti(Dataset):
                 entries.append((name, images / name, labels / name))
         if len(entries) != expected:
             raise RuntimeError(f"{root.name}/{split}: {len(entries)} != {expected}")
-        random.Random(SEED).shuffle(entries)
+        random.Random(seed).shuffle(entries)
         self.entries = entries
         self.names = [entry[0] for entry in entries]
 

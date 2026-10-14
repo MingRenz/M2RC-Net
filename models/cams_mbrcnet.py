@@ -7,13 +7,13 @@ from .mbrc import VariantMBRC, VARIANTS
 
 
 class CAMS_MBRCNet(nn.Module):
-    def __init__(self, use_cams=True):
+    def __init__(self, use_cams=True, seed=0):
         super().__init__()
         self.use_cams = bool(use_cams)
         self.base = StableCleanSSMBaseCAMS() if self.use_cams else StableCleanSSMBase()
         with torch.random.fork_rng(devices=[]):
-            torch.random.default_generator.manual_seed(0)
-            self.mbrc = VariantMBRC(VARIANTS["full"], f1_channels=32)
+            torch.random.default_generator.manual_seed(seed)
+            self.mbrc = VariantMBRC(VARIANTS["full"], f1_channels=32, seed=seed)
         self._features = {}
         self._handles = [
             module.register_forward_hook(self._capture(name))
@@ -73,9 +73,9 @@ class CAMS_MBRCNet(nn.Module):
             self._features.clear()
 
 
-def build_model(use_cams=False, use_mbrc=False):
+def build_model(use_cams=False, use_mbrc=False, seed=0):
     if use_mbrc:
-        return CAMS_MBRCNet(use_cams=use_cams)
+        return CAMS_MBRCNet(use_cams=use_cams, seed=seed)
     if use_cams:
         return StableCleanSSMBaseCAMS()
     return StableCleanSSMBase()

@@ -9,8 +9,8 @@ from .boundary import set_boundary, boundary_features
 
 
 class VariantMBRC(MBRCV3):
-    def __init__(self, variant, f1_channels=32):
-        super().__init__(f1_channels=f1_channels)
+    def __init__(self, variant, f1_channels=32, seed=0):
+        super().__init__(f1_channels=f1_channels, seed=seed)
         self.multi = variant.multi
         if not self.multi:
             remove_multistage_modules(self)

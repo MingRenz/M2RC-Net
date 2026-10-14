@@ -31,3 +31,13 @@ This copy is located at /home/zzf/myeye/CAMS-MBRCNet and uses /home/zzf/minicond
 ## Comparison framework
 
 `comparison_models/` contains the independent lazy registry, adapter contract, and future seed-run path rules for external paper baselines. No external model is registered yet. See `comparison_models/README.md` and `configs/comparison/README.md`. The existing proposed-model training entry points and historical logs remain unchanged.
+
+## OCTA500-3M seed 3 paired runs
+
+`configs/octa500_3m_seed3.yaml` changes only the experiment seed from the seed-0
+3M config. `scripts/train_3m_seed3_queue.sh` runs base, cams, mbrc, then
+cams_mbrcnet sequentially from scratch. Results use
+`log/OCTA500_3M/proposed/<model>/seed_3/`; existing seed-0 runs are untouched.
+The seed controls Python, NumPy, PyTorch, the train DataLoader and the initial
+file-order shuffle. The MBRC construction and recovery random streams are
+seed-aware while seed 0 retains its prior initial weights.

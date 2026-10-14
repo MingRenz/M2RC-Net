@@ -56,13 +56,15 @@ def config_and_flags(config_path, variant):
     if dataset not in COUNTS or config["split"] != COUNTS[dataset]:
         raise RuntimeError("Dataset/split differs from frozen protocol")
     expected = {
-        "image_size": [224, 224], "batch_size": 2, "seed": 0,
+        "image_size": [224, 224], "batch_size": 2,
         "optimizer": "Adam", "lr": 1e-4, "weight_decay": 1e-3,
         "max_epoch": 400, "patience": 40,
     }
     for key, value in expected.items():
         if config[key] != value:
             raise RuntimeError(f"Frozen protocol mismatch: {key}")
+    if isinstance(config["seed"], bool) or not isinstance(config["seed"], int) or config["seed"] < 0:
+        raise RuntimeError("Training seed must be a nonnegative integer")
     return config, VARIANT_FLAGS[variant]
 
 
@@ -71,14 +73,15 @@ def build_training_objects(config, variant, device):
     # Source Base+MBRC constructs its model before data; other sources construct
     # the frozen datasets before the model. Both orders remain explicit here.
     if variant == "mbrc":
-        model = build_model(use_cams, use_mbrc).to(device)
-        datasets = build_datasets(config["dataset"], config["data_root"], False)
+        model = build_model(use_cams, use_mbrc, seed=config["seed"]).to(device)
+        datasets = build_datasets(config["dataset"], config["data_root"], False, seed=config["seed"])
     else:
         datasets = build_datasets(
             config["dataset"], config["data_root"], use_cams,
             config["map_root"] if use_cams else None,
+            seed=config["seed"],
         )
-        model = build_model(use_cams, use_mbrc).to(device)
+        model = build_model(use_cams, use_mbrc, seed=config["seed"]).to(device)
     count = sum(p.numel() for p in model.parameters())
     if count != EXPECTED_PARAMS[variant]:
         raise RuntimeError(f"Parameter count changed: {variant} {count}")
@@ -150,7 +153,7 @@ def train(config_path, variant, result_dir=None):
         "dataset": config["dataset"], "data_root": str(Path(config["data_root"]).resolve()),
         "map_root": str(Path(config["map_root"]).resolve()) if use_cams else None,
         "split": {s: len(d) for s, d in datasets.items()},
-        "seed": 0, "resolution": [224, 224], "batch_size": 2,
+        "seed": config["seed"], "resolution": [224, 224], "batch_size": 2,
         "optimizer": "Adam", "learning_rate": 1e-4, "weight_decay": 1e-3,
         "max_epochs": 400, "patience": 40,
         "parameters": sum(p.numel() for p in model.parameters()),
