@@ -58,7 +58,7 @@ def config_and_flags(config_path, variant):
     expected = {
         "image_size": [224, 224], "batch_size": 2, "seed": 0,
         "optimizer": "Adam", "lr": 1e-4, "weight_decay": 1e-3,
-        "max_epoch": 1000, "patience": 40,
+        "max_epoch": 400, "patience": 40,
     }
     for key, value in expected.items():
         if config[key] != value:
@@ -152,7 +152,7 @@ def train(config_path, variant, result_dir=None):
         "split": {s: len(d) for s, d in datasets.items()},
         "seed": 0, "resolution": [224, 224], "batch_size": 2,
         "optimizer": "Adam", "learning_rate": 1e-4, "weight_decay": 1e-3,
-        "max_epochs": 1000, "patience": 40,
+        "max_epochs": 400, "patience": 40,
         "parameters": sum(p.numel() for p in model.parameters()),
         "checkpoint_metric": "mean per-image Otsu Val Dice",
         "test_policy": "each new best" if use_mbrc else "final best",
@@ -171,7 +171,7 @@ def train(config_path, variant, result_dir=None):
     last_epoch = best_epoch
     checkpoint = run / "model_best.pth"
     started = time.time()
-    epochs = range(1, 1001) if use_mbrc else range(1000)
+    epochs = range(1, 401) if use_mbrc else range(400)
     for epoch in epochs:
         tick = time.time()
         train_loss = epoch_train(variant, model, weights, criterion, optimizer, loaders["train"], device, epoch)
@@ -218,7 +218,7 @@ def train(config_path, variant, result_dir=None):
     summary = {
         "variant": variant, "last_epoch": last_epoch, "saved_best_epoch": best_epoch,
         "saved_best_val_dice": best_val, "final_test_dice": best_test,
-        "stop_reason": "patience40" if should_stop(last_epoch, best_epoch, config["patience"]) else "max1000",
+        "stop_reason": "patience40" if should_stop(last_epoch, best_epoch, config["patience"]) else "max400",
         "elapsed_seconds": time.time()-started, "checkpoint": str(checkpoint),
     }
     save_json(run / "summary.json", summary)

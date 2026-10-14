@@ -8,7 +8,7 @@ from losses.segmentation import DiceLoss
 from losses.cams import LOSS_CONFIG, caliber_loss
 from losses.mbrc import compute_parts as compute_mbrc_parts
 from losses.joint import compute_parts as compute_joint_parts
-MAX_EPOCHS = 1000
+MAX_EPOCHS = 400
 DEVICE = torch.device("cuda:0")
 def train_base_epoch(model, loader, criterion, optimizer, device, epoch):
     model.train()
