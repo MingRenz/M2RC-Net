@@ -10,7 +10,11 @@ if [[ "$#" -ne 1 || ! "$1" =~ ^[0-9]+$ ]]; then
 fi
 
 SEED="$1"
-CONFIG="$ROOT/configs/octa500_3m_seed$SEED.yaml"
+if [[ "$SEED" == 0 ]]; then
+    CONFIG="$ROOT/configs/octa500_3m.yaml"
+else
+    CONFIG="$ROOT/configs/octa500_3m_seed$SEED.yaml"
+fi
 if [[ ! -f "$CONFIG" ]]; then
     echo "Missing config: $CONFIG" >&2
     exit 1
@@ -39,27 +43,42 @@ for key, value in expected.items():
 print(f"Validated seed {seed} config: {sys.argv[1]}", flush=True)
 PY
 
-for PAIR in base:base cams:base_cams mbrc:base_mbrc cams_mbrcnet:CAMS-MBRCNet; do
-    IFS=: read -r VARIANT GROUP <<< "$PAIR"
-    RUN="$ROOT/log/OCTA500_3M/proposed/$GROUP/seed_$SEED"
-    if [[ -e "$RUN" ]]; then
-        echo "Refusing to overwrite existing run: $RUN" >&2
-        exit 1
+BASE="$ROOT/log/OCTA500_3M"
+QUEUE_GROUP="$BASE/queues/seed_$SEED"
+mkdir -p "$QUEUE_GROUP"
+number=1
+while true; do
+    TAG="run_$(printf '%03d' "$number")"
+    QUEUE="$QUEUE_GROUP/$TAG"
+    occupied=0
+    for PAIR in base:base cams:base_cams mbrc:base_mbrc cams_mbrcnet:CAMS-MBRCNet; do
+        IFS=: read -r VARIANT GROUP <<< "$PAIR"
+        if [[ -e "$BASE/proposed/$GROUP/seed_$SEED/$TAG" ]]; then
+            occupied=1
+            break
+        fi
+    done
+    if (( occupied )); then
+        number=$((number + 1))
+        continue
     fi
+    if mkdir "$QUEUE" 2>/dev/null; then
+        break
+    fi
+    if [[ -e "$QUEUE" ]]; then
+        number=$((number + 1))
+        continue
+    fi
+    echo "Cannot create queue run directory: $QUEUE" >&2
+    exit 1
 done
 
-QUEUE="$ROOT/log/OCTA500_3M/queues/seed_$SEED"
-mkdir -p "$(dirname "$QUEUE")"
-if ! mkdir "$QUEUE"; then
-    echo "Refusing to reuse existing queue: $QUEUE" >&2
-    exit 1
-fi
 exec > "$QUEUE/queue.log" 2>&1
-echo "$(date -Is) QUEUE START seed=$SEED"
+echo "$(date -Is) QUEUE START seed=$SEED run=$TAG"
 
 for PAIR in base:base cams:base_cams mbrc:base_mbrc cams_mbrcnet:CAMS-MBRCNet; do
     IFS=: read -r VARIANT GROUP <<< "$PAIR"
-    RUN="$ROOT/log/OCTA500_3M/proposed/$GROUP/seed_$SEED"
+    RUN="$BASE/proposed/$GROUP/seed_$SEED/$TAG"
     mkdir -p "$(dirname "$RUN")"
     mkdir "$RUN"
     echo "$(date -Is) START $VARIANT $RUN"

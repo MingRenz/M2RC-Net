@@ -27,7 +27,7 @@ def registered_models():
 
 
 def build_comparison_model(name, config):
-    """Return model plus adapter; no external models are registered yet."""
+    """Return a model and its explicit input/output adapter."""
     if name not in _REGISTRY:
         raise LookupError(
             f"{name!r} is not integrated; registered: {registered_models()}"
@@ -38,3 +38,13 @@ def build_comparison_model(name, config):
     if not isinstance(bundle, ComparisonModelBundle):
         raise TypeError("builder must return ComparisonModelBundle")
     return bundle
+
+
+register_comparison_model("unet", "comparison_models.unet.adapter:build")
+register_comparison_model("unetpp", "comparison_models.unetpp.adapter:build")
+register_comparison_model("swin_unet", "comparison_models.swin_unet.adapter:build")
+register_comparison_model("h2former", "comparison_models.h2former.adapter:build")
+register_comparison_model("vm_unet", "comparison_models.vm_unet.adapter:build")
+register_comparison_model("h_vmunet", "comparison_models.h_vmunet.adapter:build")
+register_comparison_model("octamamba", "comparison_models.octamamba.adapter:build")
+register_comparison_model("hv_octamamba", "comparison_models.hv_octamamba.adapter:build")
