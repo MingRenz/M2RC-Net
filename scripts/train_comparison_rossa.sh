@@ -7,10 +7,13 @@ MODEL=${1:?Usage: bash scripts/train_comparison_rossa.sh MODEL [SEED]}
 SEED=${2:-0}
 
 case "$MODEL" in
-  unet|unetpp|swin_unet|h2former|vm_unet|h_vmunet|octamamba|hv_octamamba) ;;
+  unet|unetpp|swin_unet|h2former|vm_unet|h_vmunet|octamamba|hv_octamamba|dgnet|pmdc_net|s3_octa) ;;
   *) echo "Unknown comparison model: $MODEL" >&2; exit 2 ;;
 esac
 [[ "$SEED" =~ ^[0-9]+$ ]] || { echo "SEED must be nonnegative integer" >&2; exit 2; }
+# Match argparse integer seeds and the trainer seed_N directory contract.
+SEED="${SEED#"${SEED%%[!0]*}"}"
+SEED=${SEED:-0}
 
 GROUP="$ROOT/log/ROSSA/comparison/$MODEL/seed_$SEED"
 mkdir -p "$GROUP"

@@ -1,8 +1,8 @@
-"""OCTA500-6M and ROSSA comparison training under the frozen Base protocol.
+"""Shared OCTA comparison training.
 
-The six copied model sources return probabilities. This runner keeps that
-representation, applies the same DiceLoss and per-image Otsu validation as the
-Base experiment, and leaves proposed-model training code untouched.
+Default objective is the existing Base DiceLoss. Registered core method losses
+are preserved explicitly; data, optimization, Otsu evaluation and checkpoint
+selection retain the common protocol.
 """
 
 import argparse
@@ -19,7 +19,8 @@ from comparison_models import build_comparison_model, registered_models
 from comparison_models.common.paths import seed_log_dir
 from datasets import build_datasets, make_loaders
 from engine.validator import is_new_best, should_stop
-from losses.segmentation import DiceLoss
+from losses.comparison import (build_comparison_loss, comparison_loss_description,
+                               comparison_train_loss_reporting, comparison_evaluation_context)
 from utils.checkpoint import save_json, save_weights
 from utils.logger import append_history
 from utils.metrics import calc_result
@@ -110,7 +111,8 @@ def train_epoch(bundle, loader, criterion, optimizer, device, epoch):
 def evaluate(bundle, loader, criterion, device, label):
     bundle.model.eval()
     losses, dices = [], []
-    with tqdm(loader, desc=label, total=len(loader), ncols=110,
+    with comparison_evaluation_context(criterion, device), tqdm(
+              loader, desc=label, total=len(loader), ncols=110,
               mininterval=1.0, leave=True) as progress:
         for _names, images, labels in progress:
             images = images.to(device=device, dtype=torch.float32)
@@ -158,7 +160,7 @@ def run(model_name, seed, result_dir, dataset):
                      "model": {"name": model_name}}
     )
     bundle.model.to(device)
-    criterion = DiceLoss()
+    criterion = build_comparison_loss(model_name, seed=seed)
     optimizer = torch.optim.Adam(
         bundle.model.parameters(), lr=config["lr"],
         weight_decay=config["weight_decay"]
@@ -175,8 +177,8 @@ def run(model_name, seed, result_dir, dataset):
         "max_epochs": 400, "patience": 40,
         "parameters": parameters, "trainable_parameters": trainable,
         "initialization": "random; no pretrained checkpoint",
-        "loss": "Base DiceLoss on source sigmoid probability",
-        "train_loss_reporting": "mean(batch DiceLoss / batch size), matching Base",
+        "loss": comparison_loss_description(model_name),
+        "train_loss_reporting": comparison_train_loss_reporting(model_name),
         "checkpoint_metric": "mean per-image minmax/uint8/Otsu Val Dice",
         "test_policy": "once after final best checkpoint reload",
         "strict_deterministic_algorithms": False,
@@ -184,6 +186,13 @@ def run(model_name, seed, result_dir, dataset):
         "torch": torch.__version__, "torch_cuda": torch.version.cuda,
         "gpu": torch.cuda.get_device_name(0),
     }
+    if model_name == "s3_octa":
+        metadata.update({
+            "input_adaptation": "single grayscale image repeated over 3 channels; not distinct projection maps",
+            "method_core_loss_preserved": True,
+            "loss_batch_reduction": "arithmetic mean of independent original batch-one objectives",
+            "diagnostic_loss_seed": seed,
+        })
     save_json(run_dir / "metadata.json", metadata)
     save_json(run_dir / "split_manifest.json", {
         split: dataset.names for split, dataset in datasets.items()
