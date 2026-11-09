@@ -6,11 +6,11 @@
 
 ## Abstract
 
-Retinal vessel segmentation in optical coherence tomography angiography (OCTA) is challenged by vessel-scale variation, low capillary contrast, and imaging artifacts. We propose **M2RC-Net**, a U-shaped visual state-space network that combines multiscale feature representation with prediction-level correction.
+Retinal vessel segmentation in optical coherence tomography angiography (OCTA) is challenged by vessel-scale variation, low capillary contrast, and imaging artifacts. We propose <strong>M2RC-Net</strong>, a U-shaped visual state-space network that combines multiscale feature representation with prediction-level correction.
 
-**Multi-Scale Context Fusion (MSCF)** integrates multiscale convolutional features and visual state-space modeling. **Multistage Bidirectional Residual Correction (MBRC)** uses multistage decoder features to predict additive and subtractive corrections to the base logits. An auxiliary **Caliber and Vesselness Estimation (CVE)** component provides structural guidance for the six MSCF stages.
+<strong>Multi-Scale Context Fusion (MSCF)</strong> integrates multiscale convolutional features and visual state-space modeling. <strong>Multistage Bidirectional Residual Correction (MBRC)</strong> uses multistage decoder features to predict additive and subtractive corrections to the base logits. An auxiliary <strong>Caliber and Vesselness Estimation (CVE)</strong> component provides structural guidance for the six MSCF stages.
 
-M2RC-Net achieves Seed 0 Dice scores of **89.73%**, **86.86%**, and **91.26%** on OCTA500-3M, OCTA500-6M, and ROSSA, respectively. This repository provides the full model, five ablation configurations, pretrained weights, and unified training and testing entry points.
+M2RC-Net achieves Seed 0 Dice scores of <strong>89.73%</strong>, <strong>86.86%</strong>, and <strong>91.26%</strong> on OCTA500-3M, OCTA500-6M, and ROSSA, respectively. This repository provides the full model, five ablation configurations, pretrained weights, and unified training and testing entry points.
 
 ## Architecture
 
@@ -28,21 +28,21 @@ Seed 0 results on three datasets. Metrics are percentages; higher is better. Ful
 
 Original images are grayscale and GT vessels are white. Error maps show true-positive vessels in green, false positives in red, false negatives in blue, and background in black.
 
-**OCTA500-3M — 10497.bmp**
+<strong>OCTA500-3M — 10497.bmp</strong>
 
 ![OCTA500-3M qualitative comparison](assets/qualitative_octa500_3m.png)
 
-**OCTA500-6M — 10248.bmp**
+<strong>OCTA500-6M — 10248.bmp</strong>
 
 ![OCTA500-6M qualitative comparison](assets/qualitative_octa500_6m.png)
 
-**ROSSA — 211.png**
+<strong>ROSSA — 211.png</strong>
 
 ![ROSSA qualitative comparison](assets/qualitative_rossa.png)
 
 ## Installation
 
-The experiments use **Linux**, **Python 3.8.19**, **PyTorch 2.0.0**, **CUDA 11.8**, **torchvision 0.15.0**, **Triton 2.0.0**, **Mamba 1.0.1**, and **Causal-Conv1d 1.0.0** on an NVIDIA GeForce RTX 2080 Ti.
+The experiments use <strong>Linux</strong>, <strong>Python 3.8.19</strong>, <strong>PyTorch 2.0.0</strong>, <strong>CUDA 11.8</strong>, <strong>torchvision 0.15.0</strong>, <strong>Triton 2.0.0</strong>, <strong>Mamba 1.0.1</strong>, and <strong>Causal-Conv1d 1.0.0</strong> on an NVIDIA GeForce RTX 2080 Ti.
 
 ### 1. Create the environment
 
@@ -69,7 +69,7 @@ python -m pip install packaging==23.2 ninja==1.11.1.1 triton==2.0.0 \
 
 ### 3. Install Mamba and Causal-Conv1d
 
-The following official wheels match **CPython 3.8 / Linux x86-64 / PyTorch 2.0 / CUDA 11.8 / C++ ABI FALSE**:
+The following official wheels match <strong>CPython 3.8 / Linux x86-64 / PyTorch 2.0 / CUDA 11.8 / C++ ABI FALSE</strong>:
 
 ```bash
 python -m pip install --no-deps \
@@ -91,8 +91,8 @@ python -c "import torch; from mamba_ssm.ops.selective_scan_interface import sele
 
 Obtain each dataset under its provider's terms:
 
-- **OCTA-500:** [IEEE DataPort](https://ieee-dataport.org/open-access/octa-500). Use the two-dimensional en face projections and vessel annotations for OCTA500-3M and OCTA500-6M.
-- **ROSSA:** the authors' [OCTA-FRNet repository](https://github.com/nhjydywd/OCTA-FRNet), including manual and SAM-assisted annotations.
+- <strong>OCTA-500:</strong> [IEEE DataPort](https://ieee-dataport.org/open-access/octa-500). Use the two-dimensional en face projections and vessel annotations for OCTA500-3M and OCTA500-6M.
+- <strong>ROSSA:</strong> the authors' [OCTA-FRNet repository](https://github.com/nhjydywd/OCTA-FRNet), including manual and SAM-assisted annotations.
 
 Organize paired images and labels according to `splits/<dataset>/{train,val,test}.txt`. The loaders validate the fixed membership and seed-dependent ordering. Provider archives may require manual organization; do not generate a new split. Raw data and CVE caches are not included.
 
@@ -119,7 +119,7 @@ data/
     test/{image,label}/          # 100 manually annotated images
 ```
 
-Image/label filenames must match. Retain the final directory names `OCTA500_6M` and `ROSSA` under alternative parent paths. Images and labels are loaded in grayscale, resized to **224 × 224** with linear and nearest-neighbor interpolation respectively, and divided by 255. No additional training augmentation is used.
+Image/label filenames must match. Retain the final directory names `OCTA500_6M` and `ROSSA` under alternative parent paths. Images and labels are loaded in grayscale, resized to <strong>224 × 224</strong> with linear and nearest-neighbor interpolation respectively, and divided by 255. No additional training augmentation is used.
 
 Generate CVE supervision on CPU into a new or empty directory:
 
@@ -211,14 +211,6 @@ Full M2RC-Net Seed 0 Val-best checkpoints are included below.
 | OCTA500-6M | Full M2RC-Net | 0 | 115 | 86.86 | `m2rcnet_6m_seed0.pth` | 13.573949 | [Download](checkpoints/m2rcnet_6m_seed0.pth) |
 | ROSSA | Full M2RC-Net | 0 | 217 | 91.26 | `m2rcnet_rossa_seed0.pth` | 13.573949 | [Download](checkpoints/m2rcnet_rossa_seed0.pth) |
 
-Sizes use decimal MB. SHA256 checksums:
-
-```text
-9373afeaf48fb6b245075a2fb81661d70c2c4e1a4321661bbb9d5a72779497e2  m2rcnet_3m_seed0.pth
-f97c17762d14e8312973737442ea60935b3a91a9f442618d7c4610ceb41466de  m2rcnet_6m_seed0.pth
-9485e6e676470db3784d8c75d8fbab6a1b78caa663fd3963bb8aada1b6d71769  m2rcnet_rossa_seed0.pth
-```
-
 ## Acknowledgments
 
 This work was inspired by [OCTAMamba](https://github.com/zs1314/OCTAMamba). We sincerely thank the authors for their valuable contributions and for making their code publicly available.
@@ -227,4 +219,4 @@ This work was inspired by [OCTAMamba](https://github.com/zs1314/OCTAMamba). We s
 
 Citation information will be updated upon publication.
 
-License: [Apache-2.0](LICENSE). Components in [models/backbone.py](models/backbone.py) are adapted from [OCTAMamba](https://github.com/zs1314/OCTAMamba/blob/main/our_model/OCTAMamba.py). Modifications include backbone organization, module integration, and deterministic selective-scan handling.
+License: [Apache-2.0](LICENSE).

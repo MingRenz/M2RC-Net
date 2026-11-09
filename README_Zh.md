@@ -6,11 +6,11 @@
 
 ## 摘要
 
-OCTA 视网膜血管分割面临血管尺度变化、毛细血管对比度低及成像伪影等挑战。我们提出 **M2RC-Net**，通过 U 形视觉状态空间网络，将多尺度特征表示与预测级校正相结合。
+OCTA 视网膜血管分割面临血管尺度变化、毛细血管对比度低及成像伪影等挑战。我们提出 <strong>M2RC-Net</strong>，通过 U 形视觉状态空间网络，将多尺度特征表示与预测级校正相结合。
 
-**多尺度上下文融合（MSCF）**整合多尺度卷积特征与视觉状态空间建模；**多阶段双向残差校正（MBRC）**利用多阶段解码特征，预测基础 logits 的增加和减去校正量。辅助组件**口径与血管性估计（CVE）**为六个 MSCF 阶段提供结构引导。
+<strong>多尺度上下文融合（MSCF）</strong>整合多尺度卷积特征与视觉状态空间建模；<strong>多阶段双向残差校正（MBRC）</strong>利用多阶段解码特征，预测基础 logits 的增加和减去校正量。辅助组件<strong>口径与血管性估计（CVE）</strong>为六个 MSCF 阶段提供结构引导。
 
-M2RC-Net 在 OCTA500-3M、OCTA500-6M 和 ROSSA 上的 Seed 0 Dice 分别为 **89.73%、86.86% 和 91.26%**。本仓库提供完整模型、五种消融配置、预训练权重，以及统一的训练和测试入口。
+M2RC-Net 在 OCTA500-3M、OCTA500-6M 和 ROSSA 上的 Seed 0 Dice 分别为 <strong>89.73%、86.86% 和 91.26%</strong>。本仓库提供完整模型、五种消融配置、预训练权重，以及统一的训练和测试入口。
 
 ## 网络结构
 
@@ -20,7 +20,7 @@ M2RC-Net 在 OCTA500-3M、OCTA500-6M 和 ROSSA 上的 Seed 0 Dice 分别为 **89
 
 ## 定量结果
 
-下图为三个数据集的 **Seed 0** 实验结果。指标以百分数表示，越高越好。完整模型根据验证集 Final Dice 选择 checkpoint。
+下图为三个数据集的 <strong>Seed 0</strong> 实验结果。指标以百分数表示，越高越好。完整模型根据验证集 Final Dice 选择 checkpoint。
 
 ![OCTA500-3M、OCTA500-6M 和 ROSSA 定量对比结果](assets/quantitative_results.png)
 
@@ -28,21 +28,21 @@ M2RC-Net 在 OCTA500-3M、OCTA500-6M 和 ROSSA 上的 Seed 0 Dice 分别为 **89
 
 Original 为灰度图，GT 血管为白色。误差图中，正确检出的血管为绿色，误检为红色，漏检为蓝色，背景为黑色。
 
-**OCTA500-3M — 10497.bmp**
+<strong>OCTA500-3M — 10497.bmp</strong>
 
 ![OCTA500-3M 定性对比](assets/qualitative_octa500_3m.png)
 
-**OCTA500-6M — 10248.bmp**
+<strong>OCTA500-6M — 10248.bmp</strong>
 
 ![OCTA500-6M 定性对比](assets/qualitative_octa500_6m.png)
 
-**ROSSA — 211.png**
+<strong>ROSSA — 211.png</strong>
 
 ![ROSSA 定性对比](assets/qualitative_rossa.png)
 
 ## 环境安装
 
-实验环境为 **Linux、Python 3.8.19、PyTorch 2.0.0、CUDA 11.8、torchvision 0.15.0、Triton 2.0.0、Mamba 1.0.1 和 Causal-Conv1d 1.0.0**，GPU 为 NVIDIA GeForce RTX 2080 Ti。
+实验环境为 <strong>Linux、Python 3.8.19、PyTorch 2.0.0、CUDA 11.8、torchvision 0.15.0、Triton 2.0.0、Mamba 1.0.1 和 Causal-Conv1d 1.0.0</strong>，GPU 为 NVIDIA GeForce RTX 2080 Ti。
 
 ### 1. 创建环境
 
@@ -69,7 +69,7 @@ python -m pip install packaging==23.2 ninja==1.11.1.1 triton==2.0.0 \
 
 ### 3. 安装 Mamba 和 Causal-Conv1d
 
-以下官方 wheel 对应 **CPython 3.8 / Linux x86-64 / PyTorch 2.0 / CUDA 11.8 / C++ ABI FALSE**：
+以下官方 wheel 对应 <strong>CPython 3.8 / Linux x86-64 / PyTorch 2.0 / CUDA 11.8 / C++ ABI FALSE</strong>：
 
 ```bash
 python -m pip install --no-deps \
@@ -91,8 +91,8 @@ python -c "import torch; from mamba_ssm.ops.selective_scan_interface import sele
 
 请遵守各数据提供方的获取和使用条款：
 
-- **OCTA-500**：[IEEE DataPort](https://ieee-dataport.org/open-access/octa-500)。使用 OCTA500-3M、OCTA500-6M 的二维 en face 投影图和血管标注。
-- **ROSSA**：作者的 [OCTA-FRNet 仓库](https://github.com/nhjydywd/OCTA-FRNet)，包含人工及 SAM 辅助标注。
+- <strong>OCTA-500</strong>：[IEEE DataPort](https://ieee-dataport.org/open-access/octa-500)。使用 OCTA500-3M、OCTA500-6M 的二维 en face 投影图和血管标注。
+- <strong>ROSSA</strong>：作者的 [OCTA-FRNet 仓库](https://github.com/nhjydywd/OCTA-FRNet)，包含人工及 SAM 辅助标注。
 
 按照 `splits/<dataset>/{train,val,test}.txt` 组织图像和标签。加载器会校验固定样本集合及对应 seed 下的顺序。原始压缩包可能需要手动整理，请勿重新划分数据。本仓库不包含原始数据和 CVE 缓存。
 
@@ -119,7 +119,7 @@ data/
     test/{image,label}/          # 100 manually annotated images
 ```
 
-图像与标签必须完全同名。更换父目录时，保留末级目录名 `OCTA500_6M` 和 `ROSSA`。图像和标签以灰度读取，分别采用线性插值和最近邻插值缩放至 **224 × 224**，再除以 255；不额外使用训练数据增强。
+图像与标签必须完全同名。更换父目录时，保留末级目录名 `OCTA500_6M` 和 `ROSSA`。图像和标签以灰度读取，分别采用线性插值和最近邻插值缩放至 <strong>224 × 224</strong>，再除以 255；不额外使用训练数据增强。
 
 在 CPU 上生成 CVE 监督，输出目录必须为空或尚未创建：
 
@@ -211,14 +211,6 @@ python test.py --model m2rcnet --dataset rossa --seed 0 \
 | OCTA500-6M | Full M2RC-Net | 0 | 115 | 86.86 | `m2rcnet_6m_seed0.pth` | 13.573949 | [Download](checkpoints/m2rcnet_6m_seed0.pth) |
 | ROSSA | Full M2RC-Net | 0 | 217 | 91.26 | `m2rcnet_rossa_seed0.pth` | 13.573949 | [Download](checkpoints/m2rcnet_rossa_seed0.pth) |
 
-大小使用十进制 MB。SHA256 校验值：
-
-```text
-9373afeaf48fb6b245075a2fb81661d70c2c4e1a4321661bbb9d5a72779497e2  m2rcnet_3m_seed0.pth
-f97c17762d14e8312973737442ea60935b3a91a9f442618d7c4610ceb41466de  m2rcnet_6m_seed0.pth
-9485e6e676470db3784d8c75d8fbab6a1b78caa663fd3963bb8aada1b6d71769  m2rcnet_rossa_seed0.pth
-```
-
 ## 致谢
 
 本研究受到 [OCTAMamba](https://github.com/zs1314/OCTAMamba) 的启发。感谢作者的研究贡献以及公开提供的代码。
@@ -227,4 +219,4 @@ f97c17762d14e8312973737442ea60935b3a91a9f442618d7c4610ceb41466de  m2rcnet_6m_see
 
 论文正式发表后将更新引用信息。
 
-本项目采用 [Apache-2.0](LICENSE) 许可证。[models/backbone.py](models/backbone.py) 中的部分组件改编自 [OCTAMamba](https://github.com/zs1314/OCTAMamba/blob/main/our_model/OCTAMamba.py)，修改涉及主干组织、模块集成与确定性 Selective Scan 处理。
+本项目采用 [Apache-2.0](LICENSE) 许可证。
