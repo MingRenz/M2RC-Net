@@ -1,0 +1,27 @@
+{
+  "dataset": "ROSSA",
+  "data_root": "data/ROSSA",
+  "map_root": "data/CVE_ROSSA_maps",
+  "split": {
+    "train": 718,
+    "val": 100,
+    "test": 100
+  },
+  "image_size": [
+    224,
+    224
+  ],
+  "batch_size": 2,
+  "seed": 0,
+  "optimizer": "Adam",
+  "lr": 0.0001,
+  "weight_decay": 0.001,
+  "max_epoch": 400,
+  "patience": 40,
+  "model": {
+    "use_mscf": false,
+    "use_cve": false,
+    "use_mbrc": false
+  },
+  "evaluation": "per-image minmax uint8 Otsu then image-wise Dice mean"
+}
