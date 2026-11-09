@@ -1,3 +1,8 @@
+# Adapted from OCTAMamba: https://github.com/zs1314/OCTAMamba/blob/main/our_model/OCTAMamba.py
+# Licensed under Apache-2.0; see LICENSE at the repository root.
+# Modified for M2RC-Net: backbone organization, module integration,
+# and deterministic selective-scan handling.
+
 import math
 from functools import partial
 from typing import Callable
@@ -57,7 +62,6 @@ class SS2D(nn.Module):
             self,
             d_model,
             d_state=16,
-            # d_state="auto", # 20240109
             d_conv=3,
             expand=2,
             dt_rank="auto",
@@ -77,7 +81,6 @@ class SS2D(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.d_state = d_state
-        # self.d_state = math.ceil(self.d_model / 6) if d_state == "auto" else d_model # 20240109
         self.d_conv = d_conv
         self.expand = expand
         self.d_inner = int(self.expand * self.d_model)
@@ -101,7 +104,7 @@ class SS2D(nn.Module):
             nn.Linear(self.d_inner, (self.dt_rank + self.d_state * 2), bias=False, **factory_kwargs),
             nn.Linear(self.d_inner, (self.dt_rank + self.d_state * 2), bias=False, **factory_kwargs),
         )
-        self.x_proj_weight = nn.Parameter(torch.stack([t.weight for t in self.x_proj], dim=0))  # (K=4, N, inner)
+        self.x_proj_weight = nn.Parameter(torch.stack([t.weight for t in self.x_proj], dim=0))
         del self.x_proj
 
         self.dt_projs = (
@@ -114,14 +117,13 @@ class SS2D(nn.Module):
             self.dt_init(self.dt_rank, self.d_inner, dt_scale, dt_init, dt_min, dt_max, dt_init_floor,
                          **factory_kwargs),
         )
-        self.dt_projs_weight = nn.Parameter(torch.stack([t.weight for t in self.dt_projs], dim=0))  # (K=4, inner, rank)
-        self.dt_projs_bias = nn.Parameter(torch.stack([t.bias for t in self.dt_projs], dim=0))  # (K=4, inner)
+        self.dt_projs_weight = nn.Parameter(torch.stack([t.weight for t in self.dt_projs], dim=0))
+        self.dt_projs_bias = nn.Parameter(torch.stack([t.bias for t in self.dt_projs], dim=0))
         del self.dt_projs
 
-        self.A_logs = self.A_log_init(self.d_state, self.d_inner, copies=4, merge=True)  # (K=4, D, N)
-        self.Ds = self.D_init(self.d_inner, copies=4, merge=True)  # (K=4, D, N)
+        self.A_logs = self.A_log_init(self.d_state, self.d_inner, copies=4, merge=True)
+        self.Ds = self.D_init(self.d_inner, copies=4, merge=True)
 
-        # self.selective_scan = selective_scan_fn
         self.forward_core = self.forward_corev0
 
         self.out_norm = nn.LayerNorm(self.d_inner)
@@ -133,7 +135,6 @@ class SS2D(nn.Module):
                 **factory_kwargs):
         dt_proj = nn.Linear(dt_rank, d_inner, bias=True, **factory_kwargs)
 
-        # Initialize special dt projection to preserve variance at initialization
         dt_init_std = dt_rank ** -0.5 * dt_scale
         if dt_init == "constant":
             nn.init.constant_(dt_proj.weight, dt_init_std)
@@ -142,29 +143,25 @@ class SS2D(nn.Module):
         else:
             raise NotImplementedError
 
-        # Initialize dt bias so that F.softplus(dt_bias) is between dt_min and dt_max
         dt = torch.exp(
             torch.rand(d_inner, **factory_kwargs) * (math.log(dt_max) - math.log(dt_min))
             + math.log(dt_min)
         ).clamp(min=dt_init_floor)
-        # Inverse of softplus: https://github.com/pytorch/pytorch/issues/72759
         inv_dt = dt + torch.log(-torch.expm1(-dt))
         with torch.no_grad():
             dt_proj.bias.copy_(inv_dt)
-        # Our initialization would set all Linear.bias to zero, need to mark this one as _no_reinit
         dt_proj.bias._no_reinit = True
 
         return dt_proj
 
     @staticmethod
     def A_log_init(d_state, d_inner, copies=1, device=None, merge=True):
-        # S4D real initialization
         A = repeat(
             torch.arange(1, d_state + 1, dtype=torch.float32, device=device),
             "n -> d n",
             d=d_inner,
         ).contiguous()
-        A_log = torch.log(A)  # Keep A_log in fp32
+        A_log = torch.log(A)
         if copies > 1:
             A_log = repeat(A_log, "d n -> r d n", r=copies)
             if merge:
@@ -175,13 +172,12 @@ class SS2D(nn.Module):
 
     @staticmethod
     def D_init(d_inner, copies=1, device=None, merge=True):
-        # D "skip" parameter
         D = torch.ones(d_inner, device=device)
         if copies > 1:
             D = repeat(D, "n1 -> r n1", r=copies)
             if merge:
                 D = D.flatten(0, 1)
-        D = nn.Parameter(D)  # Keep in fp32
+        D = nn.Parameter(D)
         D._no_weight_decay = True
         return D
 
@@ -194,21 +190,19 @@ class SS2D(nn.Module):
 
         x_hwwh = torch.stack([x.view(B, -1, L), torch.transpose(x, dim0=2, dim1=3).contiguous().view(B, -1, L)],
                              dim=1).view(B, 2, -1, L)
-        xs = torch.cat([x_hwwh, torch.flip(x_hwwh, dims=[-1])], dim=1)  # (b, k, d, l)
+        xs = torch.cat([x_hwwh, torch.flip(x_hwwh, dims=[-1])], dim=1)
 
         x_dbl = torch.einsum("b k d l, k c d -> b k c l", xs.view(B, K, -1, L), self.x_proj_weight)
-        # x_dbl = x_dbl + self.x_proj_bias.view(1, K, -1, 1)
         dts, Bs, Cs = torch.split(x_dbl, [self.dt_rank, self.d_state, self.d_state], dim=2)
         dts = torch.einsum("b k r l, k d r -> b k d l", dts.view(B, K, -1, L), self.dt_projs_weight)
-        # dts = dts + self.dt_projs_bias.view(1, K, -1, 1)
 
-        xs = xs.float().view(B, -1, L)  # (b, k * d, l)
-        dts = dts.contiguous().float().view(B, -1, L)  # (b, k * d, l)
-        Bs = Bs.float().view(B, K, -1, L)  # (b, k, d_state, l)
-        Cs = Cs.float().view(B, K, -1, L)  # (b, k, d_state, l)
-        Ds = self.Ds.float().view(-1)  # (k * d)
-        As = -torch.exp(self.A_logs.float()).view(-1, self.d_state)  # (k * d, d_state)
-        dt_projs_bias = self.dt_projs_bias.float().view(-1)  # (k * d)
+        xs = xs.float().view(B, -1, L)
+        dts = dts.contiguous().float().view(B, -1, L)
+        Bs = Bs.float().view(B, K, -1, L)
+        Cs = Cs.float().view(B, K, -1, L)
+        Ds = self.Ds.float().view(-1)
+        As = -torch.exp(self.A_logs.float()).view(-1, self.d_state)
+        dt_projs_bias = self.dt_projs_bias.float().view(-1)
 
         out_y = self.selective_scan(
             xs, dts,
@@ -229,10 +223,10 @@ class SS2D(nn.Module):
         B, H, W, C = x.shape
 
         xz = self.in_proj(x)
-        x, z = xz.chunk(2, dim=-1)  # (b, h, w, d)
+        x, z = xz.chunk(2, dim=-1)
 
         x = x.permute(0, 3, 1, 2).contiguous()
-        x = self.act(self.conv2d(x))  # (b, d, h, w)
+        x = self.act(self.conv2d(x))
         y1, y2, y3, y4 = self.forward_core(x)
         assert y1.dtype == torch.float32
         y = y1 + y2 + y3 + y4
@@ -296,7 +290,7 @@ class VSSBlock(nn.Module):
         return x_mamba
 
 
-class OCTAMambaBlock(nn.Module):
+class SSMFeatureBlock(nn.Module):
     def __init__(self, in_c, out_c, ):
         super().__init__()
         self.in_c = in_c
@@ -312,29 +306,28 @@ class OCTAMambaBlock(nn.Module):
         skip = self.residual_conv(skip)
         x = self.conv(x)
 
-        x = x.permute(0, 2, 3, 1)  # B H W C
+        x = x.permute(0, 2, 3, 1)
         x = self.block(x)
-        x = x.permute(0, 3, 1, 2)  # B C H W
+        x = x.permute(0, 3, 1, 2)
 
-        x = x.permute(0, 2, 3, 1)  # B H W C
+        x = x.permute(0, 2, 3, 1)
         x = self.act(self.ln(x))
-        x = x.permute(0, 3, 1, 2)  # B C H W
+        x = x.permute(0, 3, 1, 2)
         return x + skip * self.scale
 
 
 class EncoderBlock(nn.Module):
-    """Encoding then downsampling"""
 
     def __init__(self, in_c, out_c):
         super().__init__()
 
         self.bn = nn.BatchNorm2d(out_c)
         self.act = nn.GELU()
-        self.octamamba = OCTAMambaBlock(in_c, out_c)
+        self.feature_block = SSMFeatureBlock(in_c, out_c)
         self.down = nn.MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
-        x = self.octamamba(x)
+        x = self.feature_block(x)
         skip = self.act(self.bn(x))
         x = self.down(skip)
         return x, skip
@@ -347,7 +340,7 @@ class DecoderBlock(nn.Module):
         self.attGate = Attention_block(F_g=in_c, F_l=skip_c, F_int=skip_c // 2)
 
         self.bn2 = nn.BatchNorm2d(in_c + skip_c, out_c)
-        self.octamamba = OCTAMambaBlock(in_c + skip_c, out_c)
+        self.feature_block = SSMFeatureBlock(in_c + skip_c, out_c)
         self.act = nn.ReLU()
 
     def forward(self, x, skip):
@@ -355,11 +348,11 @@ class DecoderBlock(nn.Module):
         skip = self.attGate(x, skip)
         x = torch.cat([x, skip], dim=1)
         x = self.act(self.bn2(x))
-        x = self.octamamba(x)
+        x = self.feature_block(x)
         return x
 
 
-class StableCleanSSMBase(nn.Module):
+class SSMBase(nn.Module):
     def __init__(self):
         super().__init__()
         self.embedding = nn.Sequential(

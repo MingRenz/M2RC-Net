@@ -1,11 +1,10 @@
-"""Validation using the exact frozen per-image minmax/uint8/Otsu metric."""
 import sys
 import numpy as np
 import torch
 from tqdm import tqdm
 from utils.metrics import calc_result
 from losses.mbrc import compute_parts as compute_mbrc_parts
-from engine.trainer import cams_batch_loss, joint_calculate
+from engine.trainer import representation_batch_loss, joint_calculate
 def evaluate_base(model, loader, criterion, device, epoch=None):
     model.eval()
     losses = []
@@ -42,7 +41,7 @@ def evaluate_base(model, loader, criterion, device, epoch=None):
     return float(np.mean(losses)), float(np.mean(dices))
 
 @torch.no_grad()
-def evaluate_cams(model, weights, loader, criterion, device, name):
+def evaluate_representation(model, weights, loader, criterion, device, name):
     model.eval()
     weights.eval()
     totals = []
@@ -50,7 +49,7 @@ def evaluate_cams(model, weights, loader, criterion, device, name):
     with tqdm(loader, desc=name, total=len(loader),
               file=sys.stdout, ncols=110, mininterval=1.0) as progress:
         for batch in progress:
-            total, lseg, lcal, lves, probabilities, labels = cams_batch_loss(
+            total, lseg, lcal, lves, probabilities, labels = representation_batch_loss(
                 model, weights, criterion, batch, device
             )
             totals.append([float(x) for x in (total, lseg, lcal, lves)])

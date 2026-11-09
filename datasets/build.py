@@ -1,4 +1,3 @@
-"""One dataset and DataLoader entry, preserving each frozen split and RNG order."""
 from pathlib import Path
 import torch
 from torch.utils.data import DataLoader
@@ -13,23 +12,25 @@ COUNTS = {
 }
 
 
-def build_dataset(dataset, root, split, use_cams=False, map_root=None, seed=0):
+def build_dataset(dataset, root, split, use_cve=False, map_root=None, seed=0):
     root = Path(root).expanduser().resolve(strict=True)
     original = (OCTA3M(root, split, seed=seed) if dataset == "OCTA500_3M"
                 else OCTAMulti(root, split, seed=seed) if dataset == "OCTA500_6M"
                 else ROSSADataset(root, split, seed=seed))
     if len(original) != COUNTS[dataset][split]:
         raise RuntimeError("Frozen split count changed")
-    if use_cams:
+    from .splits import validate_split
+    validate_split(original, dataset, split, seed)
+    if use_cve:
         if map_root is None:
-            raise ValueError("CAMS requires existing map root")
+            raise ValueError("CVE supervision requires an existing map_root cache directory")
         return CaliberDataset(original, Path(map_root) / "caliber" / split)
     return original
 
 
-def build_datasets(dataset, root, use_cams=False, map_root=None, seed=0):
+def build_datasets(dataset, root, use_cve=False, map_root=None, seed=0):
     sets = {
-        split: build_dataset(dataset, root, split, use_cams, map_root, seed=seed)
+        split: build_dataset(dataset, root, split, use_cve, map_root, seed=seed)
         for split in ("train", "val", "test")
     }
     for split in sets:
@@ -51,6 +52,6 @@ def make_loaders(sets, batch_size=2, seed=0):
     return loaders
 
 
-def build_dataloaders(dataset, root, use_cams=False, map_root=None, batch_size=2, seed=0):
-    sets = build_datasets(dataset, root, use_cams, map_root, seed=seed)
+def build_dataloaders(dataset, root, use_cve=False, map_root=None, batch_size=2, seed=0):
+    sets = build_datasets(dataset, root, use_cve, map_root, seed=seed)
     return sets, make_loaders(sets, batch_size, seed)

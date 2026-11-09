@@ -1,4 +1,3 @@
-"""Exact image/GT loading and split order from Stable Clean SSM Base."""
 import random
 from pathlib import Path
 import cv2
@@ -30,7 +29,6 @@ class OCTA3M(Dataset):
         if missing:
             raise RuntimeError(f"{split} 缺少同名标签：{missing[:5]}")
 
-        # 原版先 shuffle；排序使相同 seed 下的初始文件顺序固定。
         random.Random(seed).shuffle(names)
         self.names = names
 
@@ -65,7 +63,6 @@ def seed_worker(_worker_id):
     np.random.seed(worker_seed)
 
 
-# OCTA500-6M and ROSSA keep their frozen source split construction.
 LAYOUTS = {
     "OCTA500_6M": {
         "train": (("train",), 180),
@@ -133,4 +130,3 @@ class OCTAMulti(Dataset):
         return (name,
                 torch.from_numpy(np.ascontiguousarray(image[None])),
                 torch.from_numpy(np.ascontiguousarray(label[None])))
-

@@ -1,4 +1,3 @@
-"""Load existing 224x224 CAMS caliber supervision without regenerating maps."""
 from pathlib import Path
 import numpy as np
 from torch.utils.data import Dataset
@@ -40,4 +39,3 @@ class CaliberDataset(Dataset):
             name, image, label,
             caliber[None], valid[None].astype(np.float32),
         )
-

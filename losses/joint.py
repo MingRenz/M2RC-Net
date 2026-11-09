@@ -1,8 +1,7 @@
-"""Unchanged CAMS objective plus established Full MBRC objectives."""
 import torch.nn.functional as F
 
-from models.mbrc.boundary import inner_boundary
-from .cams import LOSS_CONFIG, caliber_loss
+from models.mbrc.bfg import inner_boundary
+from .representation import LOSS_CONFIG, caliber_loss
 from .mbrc import balanced_action_loss, dynamic_actions
 
 
@@ -14,17 +13,17 @@ def compute_parts(output, gt, caliber_gt, valid, loss_weights, dice):
     vesselness = F.binary_cross_entropy_with_logits(
         output["vesselness_logits"], gt
     )
-    cams = loss_weights(base_dice, caliber, vesselness)
+    representation = loss_weights(base_dice, caliber, vesselness)
     final = dice(output["final_prob"], gt)
     actions = dynamic_actions(output["base_prob"], gt)
     action = balanced_action_loss(output["action_logits"], actions, gt)
     boundary = F.binary_cross_entropy_with_logits(
         output["edge_logits"], inner_boundary(gt)
     )
-    total = cams + final + 0.1 * action + 0.1 * boundary
+    total = representation + final + 0.1 * action + 0.1 * boundary
     return {
         "total": total,
-        "cams": cams,
+        "representation": representation,
         "base_dice": base_dice,
         "caliber": caliber,
         "vesselness": vesselness,

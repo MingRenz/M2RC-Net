@@ -1,11 +1,10 @@
-"""Shared segmentation, Action and boundary objectives."""
 
 import cv2
 import numpy as np
 import torch
 import torch.nn.functional as F
 
-from models.mbrc.boundary import inner_boundary
+from models.mbrc.bfg import inner_boundary
 
 
 def binary_from_probability(probability):
@@ -20,7 +19,6 @@ def binary_from_probability(probability):
 
 
 def dynamic_actions(base_probability, labels):
-    """Targets use only the current training batch's GT."""
     with torch.no_grad():
         probabilities = base_probability.detach().cpu().numpy()
         references = labels.detach().cpu().numpy()
@@ -52,10 +50,6 @@ def balanced_action_loss(logits, target, gt):
 
 
 def compute_parts(output, gt, criterion, variant):
-    if variant.name == "mamba":
-        loss = criterion(output, gt)
-        return {"total": loss, "base": loss, "final": loss}, output, output
-
     base = output["base_prob"]
     final = torch.sigmoid(output["z_final"])
     base_loss = criterion(base, gt)

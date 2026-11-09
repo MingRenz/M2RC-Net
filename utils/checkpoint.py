@@ -1,4 +1,3 @@
-"""Atomic saves and explicit legacy checkpoint loading."""
 import json
 import os
 from pathlib import Path
@@ -19,8 +18,7 @@ def save_weights(path, state):
     os.replace(temporary, path)
 
 
-def load_legacy_checkpoint(path, model, weights=None, map_location="cpu"):
-    """All model keys are unchanged; only legacy outer checkpoint formats vary."""
+def load_checkpoint(path, model, weights=None, map_location="cpu"):
     raw = torch.load(path, map_location=map_location)
     if isinstance(raw, dict) and "model_state_dict" in raw:
         state = raw["model_state_dict"]

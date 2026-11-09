@@ -1,7 +1,6 @@
 import numpy as np
 import math
 import cv2
-# from sklearn.metrics import roc_auc_score
 
 def calc_result(np_pred:np.ndarray, np_label:np.ndarray, thresh_value=None):
     temp = cv2.normalize(np_pred, None, 0, 255, cv2.NORM_MINMAX).astype("uint8")
@@ -17,7 +16,6 @@ def calc_result(np_pred:np.ndarray, np_label:np.ndarray, thresh_value=None):
 
 
     uni = np.unique(np_label)
-    # print(uni)
     assert (len(uni)==2) and (1 in uni) and (0 in uni)
 
 
@@ -28,7 +26,6 @@ def calc_result(np_pred:np.ndarray, np_label:np.ndarray, thresh_value=None):
 
     result = {}
     smooth = 1e-12
-    # result['auc'] = roc_auc_score(np_label, np_pred)
     result['acc'] = (TP + TN) / (FP + FN + TP + TN)
     result['fdr'] = (FP + smooth)  / (FP + TP + smooth)
     sen = (TP + smooth) / (FN + TP + smooth)
@@ -36,12 +33,11 @@ def calc_result(np_pred:np.ndarray, np_label:np.ndarray, thresh_value=None):
     result['sen'] = sen
     result['spe'] = spe
     result['gmean'] = math.sqrt(sen * spe)
-    
-    # result['kappa'] = calc_kappa(pred, gt)
-    
+
+
     result['iou'] = (TP + smooth) / (FP + FN + TP + smooth)
     result['dice'] = (2.0 * TP + smooth) / (FP + FN + 2.0 * TP + smooth)
-    
+
     return result
 
 def avg_result(ls_result):
@@ -53,6 +49,5 @@ def avg_result(ls_result):
             total_result[key].append(r[key])
     for key in total_result:
         values = np.array(total_result[key])
-        # print(f"{key} - mean: {values.mean()} \t std: {values.std()}")
         total_result[key] = float(values.mean())
     return total_result

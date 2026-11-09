@@ -1,4 +1,3 @@
-"""Frozen A40 strict determinism settings."""
 import os
 import random
 import numpy as np

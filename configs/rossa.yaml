@@ -1,7 +1,7 @@
 {
   "dataset": "ROSSA",
-  "data_root": "/home/zzf/myeye/CAMS-MBRCNet/data/ROSSA",
-  "map_root": "/home/zzf/myeye/CAMS-MBRCNet/data/CAMS_ROSSA_maps",
+  "data_root": "data/ROSSA",
+  "map_root": "data/CVE_ROSSA_maps",
   "split": {
     "train": 718,
     "val": 100,
@@ -19,7 +19,8 @@
   "max_epoch": 400,
   "patience": 40,
   "model": {
-    "use_cams": false,
+    "use_mscf": false,
+    "use_cve": false,
     "use_mbrc": false
   },
   "evaluation": "per-image minmax uint8 Otsu then image-wise Dice mean"

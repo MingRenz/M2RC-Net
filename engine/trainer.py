@@ -1,11 +1,9 @@
-"""One training engine; variant-specific loss arithmetic is unchanged."""
 import sys
 import numpy as np
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
-from losses.segmentation import DiceLoss
-from losses.cams import LOSS_CONFIG, caliber_loss
+from losses.representation import LOSS_CONFIG, caliber_loss
 from losses.mbrc import compute_parts as compute_mbrc_parts
 from losses.joint import compute_parts as compute_joint_parts
 MAX_EPOCHS = 400
@@ -33,7 +31,7 @@ def train_base_epoch(model, loader, criterion, optimizer, device, epoch):
             )
     return float(np.mean(logged_losses))
 
-def cams_batch_loss(model, weights, criterion, batch, device):
+def representation_batch_loss(model, weights, criterion, batch, device):
     _names, images, labels, caliber_gt, valid = batch
     images = images.to(device=device, dtype=torch.float32)
     labels = labels.to(device=device, dtype=torch.float32)
@@ -46,10 +44,10 @@ def cams_batch_loss(model, weights, criterion, batch, device):
     lves = F.binary_cross_entropy_with_logits(vesselness_logits, labels)
     total = weights(lseg, lcal, lves)
     if not torch.isfinite(total):
-        raise RuntimeError("Non-finite CAMS loss")
+        raise RuntimeError("Non-finite MSCF loss")
     return total, lseg, lcal, lves, probabilities, labels
 
-def train_cams_epoch(model, weights, loader, criterion, optimizer, device, epoch):
+def train_representation_epoch(model, weights, loader, criterion, optimizer, device, epoch):
     model.train()
     weights.train()
     totals = []
@@ -57,7 +55,7 @@ def train_cams_epoch(model, weights, loader, criterion, optimizer, device, epoch
               file=sys.stdout, ncols=110, mininterval=1.0) as progress:
         for batch in progress:
             optimizer.zero_grad(set_to_none=True)
-            total, lseg, lcal, lves, _prob, _labels = cams_batch_loss(
+            total, lseg, lcal, lves, _prob, _labels = representation_batch_loss(
                 model, weights, criterion, batch, device
             )
             total.backward()
@@ -137,4 +135,3 @@ def train_joint_epoch(model, weights, optimizer, dice, loader, device, epoch):
                 f"loss={sums['total']/count:.6f}", refresh=False
             )
     return {key: value / count for key, value in sums.items()}
-
